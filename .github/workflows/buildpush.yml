@@ -1,0 +1,16 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  # Nginx Alpine
+  build-nginx-proxy:
+    uses: ./.github/workflows/build.yml
+    name: fuadkleb/nginx-proxy:api
+    secrets: inherit
+    with:
+      source-directory: nginx/
+      image-tag: fuadkleb/nginx-proxy:api
