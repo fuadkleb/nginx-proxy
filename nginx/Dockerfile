@@ -1,10 +1,10 @@
 FROM nginx:alpine
 
 # Copy the NGINX configuration template into the container
-COPY config/nginx.conf.template /etc/nginx/templates/
+COPY nginx.conf.template /etc/nginx/templates/
 
 # Copy the script to substitute environment variables
-COPY nginx/entrypoint.sh /entrypoint.sh
+COPY entrypoint.sh /entrypoint.sh
 
 # Make the entrypoint script executable
 RUN chmod +x /entrypoint.sh
