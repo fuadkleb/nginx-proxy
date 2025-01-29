@@ -1,8 +1,5 @@
 FROM nginx:alpine
 
-# Copy the NGINX configuration template into the container
-COPY nginx.conf.template /etc/nginx/templates/
-
 # Copy the script to substitute environment variables
 COPY entrypoint.sh /entrypoint.sh
 
