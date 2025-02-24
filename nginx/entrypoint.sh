@@ -4,6 +4,10 @@
 cat <<EOL >/etc/nginx/conf.d/default.conf
 server {
     listen 80;
+
+    client_max_body_size 100M;
+    proxy_max_temp_file_size 0;
+    proxy_buffering off;
     
     location / {
         proxy_pass http://$PROXY_HOST:$PROXY_PORT/;
