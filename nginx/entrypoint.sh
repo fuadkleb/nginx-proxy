@@ -60,7 +60,7 @@ while true; do
         if (\$request_method = OPTIONS) {
             add_header Access-Control-Allow-Origin \$http_origin always;
             add_header Access-Control-Allow-Methods "GET, POST, OPTIONS, PUT, DELETE" always;
-            add_header Access-Control-Allow-Headers "Authorization, Content-Type" always;
+            add_header Access-Control-Allow-Headers "Authorization, Content-Type, X-Requested-With" always;
             add_header Access-Control-Max-Age 86400;
             add_header Content-Length 0;
             return 204;
@@ -78,7 +78,7 @@ while true; do
 
         add_header Access-Control-Allow-Origin \$http_origin always;
         add_header Access-Control-Allow-Methods "GET, POST, OPTIONS, PUT, DELETE" always;
-        add_header Access-Control-Allow-Headers "Authorization, Content-Type" always;
+        add_header Access-Control-Allow-Headers "Authorization, Content-Type, X-Requested-With" always;
     }
 EOL
 
