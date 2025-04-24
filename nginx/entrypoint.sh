@@ -10,6 +10,15 @@ server {
     proxy_buffering off;
     
     location / {
+        if (\$request_method = OPTIONS) {
+            add_header Access-Control-Allow-Origin \$http_origin always;
+            add_header Access-Control-Allow-Methods "GET, POST, OPTIONS, PUT, DELETE" always;
+            add_header Access-Control-Allow-Headers "Authorization, Content-Type" always;
+            add_header Access-Control-Max-Age 86400;
+            add_header Content-Length 0;
+            return 204;
+        }
+
         proxy_pass http://$PROXY_HOST:$PROXY_PORT/;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
@@ -19,6 +28,10 @@ server {
         proxy_connect_timeout 1800;
         proxy_send_timeout 1800;
         send_timeout 1800;
+
+        add_header Access-Control-Allow-Origin \$http_origin always;
+        add_header Access-Control-Allow-Methods "GET, POST, OPTIONS, PUT, DELETE" always;
+        add_header Access-Control-Allow-Headers "Authorization, Content-Type" always;
     }
 
 EOL
@@ -44,6 +57,15 @@ while true; do
     # Append location block to the Nginx configuration
     cat <<EOL >>/etc/nginx/conf.d/default.conf
     location $PATH_VAR {
+        if (\$request_method = OPTIONS) {
+            add_header Access-Control-Allow-Origin \$http_origin always;
+            add_header Access-Control-Allow-Methods "GET, POST, OPTIONS, PUT, DELETE" always;
+            add_header Access-Control-Allow-Headers "Authorization, Content-Type" always;
+            add_header Access-Control-Max-Age 86400;
+            add_header Content-Length 0;
+            return 204;
+        }
+
         proxy_pass http://$HOST_VAR:$PORT_VAR;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
@@ -53,6 +75,10 @@ while true; do
         proxy_connect_timeout 1800;
         proxy_send_timeout 1800;
         send_timeout 1800;
+
+        add_header Access-Control-Allow-Origin \$http_origin always;
+        add_header Access-Control-Allow-Methods "GET, POST, OPTIONS, PUT, DELETE" always;
+        add_header Access-Control-Allow-Headers "Authorization, Content-Type" always;
     }
 EOL
 
