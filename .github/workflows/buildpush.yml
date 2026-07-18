@@ -40,3 +40,20 @@ jobs:
           tags: fuadkleb/nginx-proxy:multi
           platforms: linux/amd64
           push: true
+
+      - name: Build fuadkleb/nginx-proxy:multiws
+        uses: docker/build-push-action@v4
+        with:
+          context: nginx-ws/
+          tags: fuadkleb/nginx-proxy:multiws
+          platforms: linux/amd64
+          load: true
+
+      - name: Push fuadkleb/nginx-proxy:multiws
+        uses: docker/build-push-action@v4
+        if: ${{ github.event_name != 'pull_request' }}
+        with:
+          context: nginx-ws/
+          tags: fuadkleb/nginx-proxy:multiws
+          platforms: linux/amd64
+          push: true
