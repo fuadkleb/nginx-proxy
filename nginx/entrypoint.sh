@@ -1,5 +1,14 @@
 #!/bin/sh
 
+# Maximum number of extra paths (PROXY_PATH1 .. PROXY_PATH5)
+MAX_PATHS=5
+
+# Check initial proxy settings
+if [ -z "$PROXY_HOST" ] || [ -z "$PROXY_PORT" ]; then
+    echo "PROXY_HOST and PROXY_PORT must be set."
+    exit 1
+fi
+
 # Define the beginning of the Nginx configuration
 cat <<EOL >/etc/nginx/conf.d/default.conf
 server {
@@ -36,22 +45,29 @@ server {
 
 EOL
 
-# Check initial proxy settings
-if [ -z "$PROXY_HOST" ] || [ -z "$PROXY_PORT" ]; then
-    echo "PROXY_HOST and PROXY_PORT must be set."
-    exit 1
-fi
+# Warn about paths beyond the supported maximum
+for N in $(env | sed -n 's/^PROXY_PATH\([0-9][0-9]*\)=.*/\1/p'); do
+    if [ "$N" -gt "$MAX_PATHS" ]; then
+        echo "Warning: PROXY_PATH$N is ignored, only up to $MAX_PATHS paths are supported."
+    fi
+done
 
-# Loop over environment variables to find PROXY_PATH, PROXY_HOST, and PROXY_PORT
+# Loop over PROXY_PATH1..PROXY_PATH$MAX_PATHS with their PROXY_HOSTx and PROXY_PORTx
 INDEX=1
-while true; do
+while [ "$INDEX" -le "$MAX_PATHS" ]; do
     eval PATH_VAR="\$PROXY_PATH$INDEX"
     eval HOST_VAR="\$PROXY_HOST$INDEX"
     eval PORT_VAR="\$PROXY_PORT$INDEX"
 
-    # If no PROXY_PATH exists, break the loop
+    # Skip unused slots, so gaps (e.g. PROXY_PATH1 and PROXY_PATH3 only) are allowed
     if [ -z "$PATH_VAR" ]; then
-        break
+        INDEX=$((INDEX + 1))
+        continue
+    fi
+
+    if [ -z "$HOST_VAR" ] || [ -z "$PORT_VAR" ]; then
+        echo "PROXY_HOST$INDEX and PROXY_PORT$INDEX must be set when PROXY_PATH$INDEX is set."
+        exit 1
     fi
 
     # Append location block to the Nginx configuration

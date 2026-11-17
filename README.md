@@ -2,6 +2,32 @@
 
 This guide sets up an Nginx reverse proxy using Docker. The configuration routes requests to `/` to one server and requests to `/api` to another server.
 
+## Prebuilt images (environment variables)
+
+Two images are built from this repo:
+
+- `nginx-proxy:multi` (`nginx/`): plain HTTP proxy
+- `nginx-proxy:multiws` (`nginx-ws/`): same, plus WebSocket support (`Upgrade` / `Connection` headers)
+
+Both are configured with the same environment variables:
+
+| Variable | Required | Description |
+| --- | --- | --- |
+| `PROXY_HOST`, `PROXY_PORT` | yes | Upstream for `/` (the path prefix is stripped) |
+| `PROXY_PATHn`, `PROXY_HOSTn`, `PROXY_PORTn` (`n` = 1..5) | no | Extra location `PROXY_PATHn` proxied to `PROXY_HOSTn:PROXY_PORTn` (path is kept) |
+
+- Up to **5** extra paths are supported (`PROXY_PATH1` .. `PROXY_PATH5`). `PROXY_PATH6` and above are ignored with a warning.
+- Slots can be skipped (e.g. only `PROXY_PATH1` and `PROXY_PATH3`).
+- If `PROXY_PATHn` is set, `PROXY_HOSTn` and `PROXY_PORTn` must also be set, otherwise the container exits.
+
+```bash
+docker run -d -p 80:80 \
+  -e PROXY_HOST=frontend -e PROXY_PORT=3000 \
+  -e PROXY_PATH1=/api    -e PROXY_HOST1=backend -e PROXY_PORT1=8080 \
+  -e PROXY_PATH2=/socket -e PROXY_HOST2=realtime -e PROXY_PORT2=9000 \
+  <registry>/nginx-proxy:multiws
+```
+
 ## Prerequisites
 
 - Docker installed on your machine
