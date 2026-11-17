@@ -15,10 +15,14 @@ Both are configured with the same environment variables:
 | --- | --- | --- |
 | `PROXY_HOST`, `PROXY_PORT` | yes | Upstream for `/` (the path prefix is stripped) |
 | `PROXY_PATHn`, `PROXY_HOSTn`, `PROXY_PORTn` (`n` = 1..5) | no | Extra location `PROXY_PATHn` proxied to `PROXY_HOSTn:PROXY_PORTn` (path is kept) |
+| `PROXY_UPSTREAM_PATHn` | no | Replace the matched `PROXY_PATHn` prefix with this path upstream, e.g. `PROXY_PATH1=/usul-api/` + `PROXY_UPSTREAM_PATH1=/api/` sends `/usul-api/v1/x` as `/api/v1/x`. Use `/` to strip the prefix. Must start with `/` |
+| `PROXY_COOKIE_PATHn` | no | Rewrite the `Path` of upstream `Set-Cookie` headers, as `"<upstream path> <public path>"`, e.g. `"/api/v1/auth /usul-api/v1/auth"` |
 
 - Up to **5** extra paths are supported (`PROXY_PATH1` .. `PROXY_PATH5`). `PROXY_PATH6` and above are ignored with a warning.
 - Slots can be skipped (e.g. only `PROXY_PATH1` and `PROXY_PATH3`).
 - If `PROXY_PATHn` is set, `PROXY_HOSTn` and `PROXY_PORTn` must also be set, otherwise the container exits.
+- `PROXY_PATHn` and `PROXY_UPSTREAM_PATHn` should both end with `/` (or both not), otherwise nginx joins the paths incorrectly; the container logs a warning.
+- Use `PROXY_COOKIE_PATHn` together with `PROXY_UPSTREAM_PATHn` when the upstream sets cookies scoped to its own path, otherwise the browser never sends them back to the public path.
 
 ```bash
 docker run -d -p 80:80 \
@@ -26,6 +30,17 @@ docker run -d -p 80:80 \
   -e PROXY_PATH1=/api    -e PROXY_HOST1=backend -e PROXY_PORT1=8080 \
   -e PROXY_PATH2=/socket -e PROXY_HOST2=realtime -e PROXY_PORT2=9000 \
   <registry>/nginx-proxy:multiws
+```
+
+Serving an upstream under a different public prefix (`/usul-api/` here, `/api/` on the backend, with its refresh cookie scoped to `/api/v1/auth`):
+
+```bash
+docker run -d -p 80:80 \
+  -e PROXY_HOST=frontend -e PROXY_PORT=80 \
+  -e PROXY_PATH1=/usul-api/ -e PROXY_HOST1=backend -e PROXY_PORT1=8081 \
+  -e PROXY_UPSTREAM_PATH1=/api/ \
+  -e PROXY_COOKIE_PATH1="/api/v1/auth /usul-api/v1/auth" \
+  <registry>/nginx-proxy:multi
 ```
 
 ## Prerequisites

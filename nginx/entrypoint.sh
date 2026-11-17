@@ -58,6 +58,8 @@ while [ "$INDEX" -le "$MAX_PATHS" ]; do
     eval PATH_VAR="\$PROXY_PATH$INDEX"
     eval HOST_VAR="\$PROXY_HOST$INDEX"
     eval PORT_VAR="\$PROXY_PORT$INDEX"
+    eval UPSTREAM_PATH_VAR="\$PROXY_UPSTREAM_PATH$INDEX"
+    eval COOKIE_PATH_VAR="\$PROXY_COOKIE_PATH$INDEX"
 
     # Skip unused slots, so gaps (e.g. PROXY_PATH1 and PROXY_PATH3 only) are allowed
     if [ -z "$PATH_VAR" ]; then
@@ -68,6 +70,35 @@ while [ "$INDEX" -le "$MAX_PATHS" ]; do
     if [ -z "$HOST_VAR" ] || [ -z "$PORT_VAR" ]; then
         echo "PROXY_HOST$INDEX and PROXY_PORT$INDEX must be set when PROXY_PATH$INDEX is set."
         exit 1
+    fi
+
+    # Optional PROXY_UPSTREAM_PATHn: replace the matched PROXY_PATHn prefix with
+    # this path upstream (nginx proxy_pass with a URI), e.g. /usul-api/ -> /api/.
+    # Unset keeps the request path unchanged.
+    if [ -n "$UPSTREAM_PATH_VAR" ]; then
+        case "$UPSTREAM_PATH_VAR" in
+            /*) ;;
+            *)
+                echo "PROXY_UPSTREAM_PATH$INDEX must start with '/'."
+                exit 1
+                ;;
+        esac
+        case "$PATH_VAR" in */) PATH_SLASH=1 ;; *) PATH_SLASH=0 ;; esac
+        case "$UPSTREAM_PATH_VAR" in */) UPSTREAM_SLASH=1 ;; *) UPSTREAM_SLASH=0 ;; esac
+        if [ "$PATH_SLASH" != "$UPSTREAM_SLASH" ]; then
+            echo "Warning: PROXY_PATH$INDEX ($PATH_VAR) and PROXY_UPSTREAM_PATH$INDEX ($UPSTREAM_PATH_VAR) should both end with '/' or both not, otherwise the upstream path is joined incorrectly."
+        fi
+    fi
+
+    # Optional PROXY_COOKIE_PATHn: rewrite the Path of upstream Set-Cookie headers,
+    # given as "<upstream path> <public path>" (nginx proxy_cookie_path).
+    COOKIE_PATH_LINE=""
+    if [ -n "$COOKIE_PATH_VAR" ]; then
+        if [ "$(echo "$COOKIE_PATH_VAR" | awk '{print NF}')" -ne 2 ]; then
+            echo "PROXY_COOKIE_PATH$INDEX must be two paths: \"<upstream path> <public path>\"."
+            exit 1
+        fi
+        COOKIE_PATH_LINE="        proxy_cookie_path $COOKIE_PATH_VAR;"
     fi
 
     # Append location block to the Nginx configuration
@@ -82,7 +113,8 @@ while [ "$INDEX" -le "$MAX_PATHS" ]; do
             return 204;
         }
 
-        proxy_pass http://$HOST_VAR:$PORT_VAR;
+        proxy_pass http://$HOST_VAR:$PORT_VAR$UPSTREAM_PATH_VAR;
+$COOKIE_PATH_LINE
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
